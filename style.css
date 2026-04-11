@@ -58,6 +58,9 @@ body {
     height: 100%;
     position: relative;
     cursor: pointer;
+    touch-action: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 canvas {

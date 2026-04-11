@@ -18,6 +18,17 @@ const config = {
     particleEnabled: true,
     soundEnabled: true,
     bestScoreKey: 'arcadeGlideBest',
+    mobile: {
+        gravity: 0.28,
+        flapStrength: -9.4,
+        maxFallSpeed: 10.8,
+        maxRiseSpeed: -10.4,
+        baseObstacleSpeed: 2.22,
+        obstacleGapStart: 236,
+        obstacleGapMin: 158,
+        spawnInterval: 1560,
+        minSpawnInterval: 1120,
+    },
 };
 
 const canvas = document.getElementById('gameCanvas');
@@ -52,6 +63,7 @@ const state = {
     shakeTime: 0,
     shakeStrength: 0,
     soundEnabled: config.soundEnabled,
+    mobileTuning: false,
 };
 
 const input = {
@@ -65,6 +77,30 @@ const obstacles = [];
 const AudioCtor = window.AudioContext || window.webkitAudioContext;
 const audioContext = AudioCtor ? new AudioCtor() : null;
 let audioUnlocked = false;
+
+function getTuning() {
+    return state.mobileTuning ? config.mobile : config;
+}
+
+function prefersMobileTuning() {
+    const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+    const smallScreen = Math.min(window.innerWidth, window.innerHeight) <= 640;
+    return coarsePointer || smallScreen;
+}
+
+function syncResponsiveTuning() {
+    const shouldUseMobileTuning = prefersMobileTuning();
+    if (state.mobileTuning === shouldUseMobileTuning) return;
+
+    state.mobileTuning = shouldUseMobileTuning;
+
+    if (state.current !== 'playing') {
+        const tuning = getTuning();
+        state.spawnInterval = tuning.spawnInterval;
+        state.obstacleSpeed = tuning.baseObstacleSpeed;
+        state.obstacleGap = tuning.obstacleGapStart;
+    }
+}
 
 class Bird {
     constructor() {
@@ -89,7 +125,7 @@ class Bird {
     }
 
     flap() {
-        this.velocity = config.flapStrength;
+        this.velocity = getTuning().flapStrength;
         if (!audioUnlocked) unlockAudio();
         playSound('flap');
         this.wing = 1;
@@ -101,8 +137,9 @@ class Bird {
             this.y = config.height * 0.42 + Math.sin(this.bob) * 8;
             this.rotation = Math.sin(this.bob * 0.9) * 0.2;
         } else {
-            this.velocity += config.gravity;
-            this.velocity = clamp(this.velocity, config.maxRiseSpeed, config.maxFallSpeed);
+            const tuning = getTuning();
+            this.velocity += tuning.gravity;
+            this.velocity = clamp(this.velocity, tuning.maxRiseSpeed, tuning.maxFallSpeed);
             this.y += this.velocity;
             this.rotation = lerp(this.rotation, this.velocity / 18, 0.08);
         }
@@ -173,7 +210,7 @@ class Obstacle {
         this.gapSize = gapSize;
         this.speed = speed;
         this.passed = false;
-        this.topHeight = randomRange(96, config.height - config.obstacleGapMin - 140);
+        this.topHeight = randomRange(96, config.height - this.gapSize - 140);
         this.bottomY = this.topHeight + this.gapSize;
     }
 
@@ -323,11 +360,13 @@ function loadBestScore() {
 }
 
 function resetGame() {
+    syncResponsiveTuning();
+    const tuning = getTuning();
     state.score = 0;
     state.spawnTimer = 0;
-    state.spawnInterval = config.spawnInterval;
-    state.obstacleSpeed = config.baseObstacleSpeed;
-    state.obstacleGap = config.obstacleGapStart;
+    state.spawnInterval = tuning.spawnInterval;
+    state.obstacleSpeed = tuning.baseObstacleSpeed;
+    state.obstacleGap = tuning.obstacleGapStart;
     state.gameTime = 0;
     state.elapsedTime = 0;
     state.gameStartTime = 0;
@@ -416,18 +455,21 @@ stage.addEventListener('pointerdown', (event) => {
     handleInput();
 });
 
+window.addEventListener('resize', syncResponsiveTuning);
+
 function spawnObstacle() {
-    const gap = Math.max(config.obstacleGapMin, state.obstacleGap);
+    const gap = Math.max(getTuning().obstacleGapMin, state.obstacleGap);
     obstacles.push(new Obstacle(config.width + 40, gap, state.obstacleSpeed));
 }
 
 function updateDifficulty() {
+    const tuning = getTuning();
     const difficulty = 1 + state.score * config.difficultyRate;
-    state.obstacleSpeed = config.baseObstacleSpeed * clamp(difficulty, 1, 2.8);
-    state.obstacleGap = config.obstacleGapStart - state.score * 1.8;
-    state.obstacleGap = Math.max(config.obstacleGapMin, state.obstacleGap);
-    state.spawnInterval = config.spawnInterval - state.score * 12;
-    state.spawnInterval = Math.max(config.minSpawnInterval, state.spawnInterval);
+    state.obstacleSpeed = tuning.baseObstacleSpeed * clamp(difficulty, 1, 2.8);
+    state.obstacleGap = tuning.obstacleGapStart - state.score * 1.8;
+    state.obstacleGap = Math.max(tuning.obstacleGapMin, state.obstacleGap);
+    state.spawnInterval = tuning.spawnInterval - state.score * 12;
+    state.spawnInterval = Math.max(tuning.minSpawnInterval, state.spawnInterval);
 }
 
 function spawnParticles(x, y) {
@@ -581,6 +623,7 @@ function loop(timestamp) {
 }
 
 function init() {
+    syncResponsiveTuning();
     loadBestScore();
     updateUI();
     showOverlay(ui.startScreen);
