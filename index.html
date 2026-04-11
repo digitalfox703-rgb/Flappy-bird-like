@@ -30,6 +30,12 @@
                         <span>BEST</span>
                         <span id="bestValue">0</span>
                     </div>
+                    <div class="live-leaderboard">
+                        <div class="live-leaderboard-title">Top 3 chrono</div>
+                        <ol class="live-leaderboard-list leaderboard-list" id="liveLeaderboard">
+                            <li>Chargement...</li>
+                        </ol>
+                    </div>
                 </div>
                 <div class="screen-overlay start-screen active" id="startScreen">
                     <div class="overlay-block">
@@ -62,9 +68,9 @@
                         <div class="gameover-level">Niveau <strong id="gameOverLevel">1</strong></div>
                         <div class="gameover-rank" id="rankLabel">Beginner</div>
                         <form class="leaderboard-form" id="leaderboardForm">
-                            <label for="playerName">Ton nom</label>
+                            <label for="playerName">Ton prenom</label>
                             <div class="leaderboard-controls">
-                                <input id="playerName" name="playerName" type="text" maxlength="16" autocomplete="nickname" placeholder="Pseudo">
+                                <input id="playerName" name="playerName" type="text" maxlength="16" autocomplete="given-name" placeholder="Prenom">
                                 <button type="submit">Envoyer</button>
                             </div>
                             <div class="leaderboard-message" id="leaderboardMessage">Disponible a partir de 10.0s.</div>

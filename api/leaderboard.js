@@ -44,7 +44,7 @@ function send(response, statusCode, body) {
 
 function sanitizeName(name) {
     const cleanName = String(name || '').trim().replace(/\s+/g, ' ').slice(0, 16);
-    return cleanName || 'Player';
+    return cleanName || 'Joueur';
 }
 
 function sanitizeNumber(value, fallback = 0) {

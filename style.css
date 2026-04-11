@@ -79,7 +79,8 @@ canvas {
 .score-board,
 .time-board,
 .level-board,
-.best-bar {
+.best-bar,
+.live-leaderboard {
     position: absolute;
     background: rgba(255, 255, 255, 0.88);
     border: 2px solid rgba(17, 48, 71, 0.16);
@@ -171,6 +172,37 @@ canvas {
     text-align: center;
     font-weight: 800;
     color: #0f2f44;
+}
+
+.live-leaderboard {
+    left: 16px;
+    bottom: 60px;
+    width: 178px;
+    padding: 10px 12px;
+}
+
+.live-leaderboard-title {
+    font-size: 11px;
+    font-weight: 800;
+    color: #0f2f44;
+    text-transform: uppercase;
+}
+
+.live-leaderboard-list {
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.live-leaderboard-list li {
+    min-height: 18px;
+    font-size: 11px;
+}
+
+.live-leaderboard-list li span:first-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .screen-overlay {

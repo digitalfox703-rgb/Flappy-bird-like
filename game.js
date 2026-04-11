@@ -48,6 +48,7 @@ const ui = {
     gameOverTime: document.getElementById('gameOverTime'),
     gameOverLevel: document.getElementById('gameOverLevel'),
     rankLabel: document.getElementById('rankLabel'),
+    liveLeaderboard: document.getElementById('liveLeaderboard'),
     startLeaderboard: document.getElementById('startLeaderboard'),
     gameOverLeaderboard: document.getElementById('gameOverLeaderboard'),
     leaderboardForm: document.getElementById('leaderboardForm'),
@@ -434,7 +435,7 @@ function formatChrono(seconds) {
 }
 
 function renderLeaderboard(entries) {
-    const lists = [ui.startLeaderboard, ui.gameOverLeaderboard];
+    const lists = [ui.startLeaderboard, ui.gameOverLeaderboard, ui.liveLeaderboard];
     const rows = Array.isArray(entries) ? entries.slice(0, 3) : [];
 
     lists.forEach((list) => {
