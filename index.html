@@ -14,6 +14,10 @@
             <div class="canvas-wrapper">
                 <canvas id="gameCanvas" width="480" height="720"></canvas>
                 <div class="ui-overlay">
+                    <div class="level-board">
+                        <div class="level-label">NIVEAU</div>
+                        <div class="level-value" id="levelValue">1</div>
+                    </div>
                     <div class="score-board">
                         <div class="score-label">SCORE</div>
                         <div class="score-value" id="scoreValue">0</div>
@@ -41,6 +45,12 @@
                                 <strong>GO</strong>
                             </div>
                         </div>
+                        <div class="leaderboard-panel">
+                            <div class="leaderboard-title">Top 3 chrono</div>
+                            <ol class="leaderboard-list" id="startLeaderboard">
+                                <li>Chargement...</li>
+                            </ol>
+                        </div>
                     </div>
                 </div>
                 <div class="screen-overlay gameover-screen" id="gameOverScreen">
@@ -49,7 +59,22 @@
                         <div class="gameover-score">Score <strong id="gameOverScore">0</strong></div>
                         <div class="gameover-best">Best <strong id="gameOverBest">0</strong></div>
                         <div class="gameover-time">Temps <strong id="gameOverTime">0.0s</strong></div>
+                        <div class="gameover-level">Niveau <strong id="gameOverLevel">1</strong></div>
                         <div class="gameover-rank" id="rankLabel">Beginner</div>
+                        <form class="leaderboard-form" id="leaderboardForm">
+                            <label for="playerName">Ton nom</label>
+                            <div class="leaderboard-controls">
+                                <input id="playerName" name="playerName" type="text" maxlength="16" autocomplete="nickname" placeholder="Pseudo">
+                                <button type="submit">Envoyer</button>
+                            </div>
+                            <div class="leaderboard-message" id="leaderboardMessage">Disponible a partir de 10.0s.</div>
+                        </form>
+                        <div class="leaderboard-panel">
+                            <div class="leaderboard-title">Top 3 chrono</div>
+                            <ol class="leaderboard-list" id="gameOverLeaderboard">
+                                <li>Chargement...</li>
+                            </ol>
+                        </div>
                         <div class="restart-text">Espace, clic ou toucher pour rejouer</div>
                     </div>
                 </div>

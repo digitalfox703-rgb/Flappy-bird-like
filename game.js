@@ -37,6 +37,7 @@ const stage = document.querySelector('.canvas-wrapper');
 
 const ui = {
     scoreValue: document.getElementById('scoreValue'),
+    levelValue: document.getElementById('levelValue'),
     bestValue: document.getElementById('bestValue'),
     timeValue: document.getElementById('timeValue'),
     startBest: document.getElementById('startBest'),
@@ -45,12 +46,19 @@ const ui = {
     gameOverScore: document.getElementById('gameOverScore'),
     gameOverBest: document.getElementById('gameOverBest'),
     gameOverTime: document.getElementById('gameOverTime'),
+    gameOverLevel: document.getElementById('gameOverLevel'),
     rankLabel: document.getElementById('rankLabel'),
+    startLeaderboard: document.getElementById('startLeaderboard'),
+    gameOverLeaderboard: document.getElementById('gameOverLeaderboard'),
+    leaderboardForm: document.getElementById('leaderboardForm'),
+    playerName: document.getElementById('playerName'),
+    leaderboardMessage: document.getElementById('leaderboardMessage'),
 };
 
 const state = {
     current: 'start',
     score: 0,
+    level: 1,
     bestScore: 0,
     lastTime: 0,
     spawnTimer: 0,
@@ -64,6 +72,7 @@ const state = {
     shakeStrength: 0,
     soundEnabled: config.soundEnabled,
     mobileTuning: false,
+    leaderboardSubmitting: false,
 };
 
 const input = {
@@ -363,6 +372,7 @@ function resetGame() {
     syncResponsiveTuning();
     const tuning = getTuning();
     state.score = 0;
+    state.level = 1;
     state.spawnTimer = 0;
     state.spawnInterval = tuning.spawnInterval;
     state.obstacleSpeed = tuning.baseObstacleSpeed;
@@ -408,12 +418,110 @@ function showGameOver() {
     ui.gameOverScore.textContent = state.score;
     ui.gameOverBest.textContent = state.bestScore;
     ui.gameOverTime.textContent = `${state.elapsedTime.toFixed(1)}s`;
+    ui.gameOverLevel.textContent = state.level;
     ui.rankLabel.textContent = getRankLabel(state.score);
+    prepareLeaderboardForm();
     showOverlay(ui.gameOverScreen);
+    loadLeaderboard();
 }
 
 function hideGameOver() {
     hideOverlay(ui.gameOverScreen);
+}
+
+function formatChrono(seconds) {
+    return `${Number(seconds).toFixed(1)}s`;
+}
+
+function renderLeaderboard(entries) {
+    const lists = [ui.startLeaderboard, ui.gameOverLeaderboard];
+    const rows = Array.isArray(entries) ? entries.slice(0, 3) : [];
+
+    lists.forEach((list) => {
+        if (!list) return;
+        if (!rows.length) {
+            list.innerHTML = '<li>Aucun chrono en ligne</li>';
+            return;
+        }
+
+        list.innerHTML = rows.map((entry) => (
+            `<li><span><strong>${escapeHtml(entry.name)}</strong> niv. ${entry.level}</span><span>${formatChrono(entry.time)}</span></li>`
+        )).join('');
+    });
+}
+
+function setLeaderboardMessage(message) {
+    ui.leaderboardMessage.textContent = message;
+}
+
+function prepareLeaderboardForm() {
+    const qualifies = state.elapsedTime > 10;
+    ui.leaderboardForm.classList.toggle('active', qualifies);
+    ui.playerName.disabled = !qualifies;
+    ui.leaderboardForm.querySelector('button').disabled = !qualifies;
+
+    if (qualifies) {
+        setLeaderboardMessage('Ton chrono peut entrer dans le top 3.');
+        return;
+    }
+
+    setLeaderboardMessage('Il faut faire plus de 10.0s pour le classement.');
+}
+
+async function loadLeaderboard() {
+    try {
+        const response = await fetch('/api/leaderboard', { cache: 'no-store' });
+        if (!response.ok) throw new Error('leaderboard unavailable');
+        const data = await response.json();
+        renderLeaderboard(data.entries);
+    } catch (error) {
+        renderLeaderboard([]);
+        setLeaderboardMessage('Classement en ligne a connecter sur Vercel.');
+    }
+}
+
+async function submitLeaderboard(event) {
+    event.preventDefault();
+    if (state.leaderboardSubmitting || state.elapsedTime <= 10) return;
+
+    state.leaderboardSubmitting = true;
+    const button = ui.leaderboardForm.querySelector('button');
+    button.disabled = true;
+    setLeaderboardMessage('Envoi du chrono...');
+
+    try {
+        const response = await fetch('/api/leaderboard', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: ui.playerName.value,
+                time: state.elapsedTime,
+                score: state.score,
+                level: state.level,
+            }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'submission failed');
+
+        renderLeaderboard(data.entries);
+        setLeaderboardMessage(data.accepted ? 'Chrono envoye.' : 'Chrono hors top 3.');
+    } catch (error) {
+        setLeaderboardMessage('Classement en ligne indisponible pour le moment.');
+    } finally {
+        state.leaderboardSubmitting = false;
+        button.disabled = false;
+    }
+}
+
+function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;',
+    }[char]));
 }
 
 function getRankLabel(score) {
@@ -425,6 +533,7 @@ function getRankLabel(score) {
 
 function updateUI() {
     ui.scoreValue.textContent = state.score;
+    ui.levelValue.textContent = state.level;
     ui.bestValue.textContent = state.bestScore;
     ui.startBest.textContent = state.bestScore;
     ui.timeValue.textContent = `${state.elapsedTime.toFixed(1)}s`;
@@ -451,10 +560,12 @@ window.addEventListener('keydown', (event) => {
 });
 
 stage.addEventListener('pointerdown', (event) => {
+    if (event.target.closest('.leaderboard-form')) return;
     event.preventDefault();
     handleInput();
 });
 
+ui.leaderboardForm.addEventListener('submit', submitLeaderboard);
 window.addEventListener('resize', syncResponsiveTuning);
 
 function spawnObstacle() {
@@ -509,6 +620,7 @@ function update(deltaTime) {
         obstacles.forEach((obstacle) => {
             if (obstacle.handleScore(bird.x) && state.current === 'playing') {
                 state.score += 1;
+                state.level += 1;
                 playSound('score');
                 spawnParticles(bird.x, bird.y);
                 updateUI();
@@ -626,6 +738,7 @@ function init() {
     syncResponsiveTuning();
     loadBestScore();
     updateUI();
+    loadLeaderboard();
     showOverlay(ui.startScreen);
     state.lastTime = performance.now();
     requestAnimationFrame(loop);
