@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Arcade Glide</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="page-shell">
+        <div class="game-shell">
+            <div class="canvas-wrapper">
+                <canvas id="gameCanvas" width="480" height="720"></canvas>
+                <div class="ui-overlay">
+                    <div class="score-board">
+                        <div class="score-label">SCORE</div>
+                        <div class="score-value" id="scoreValue">0</div>
+                    </div>
+                    <div class="time-board">
+                        <div class="time-label">⏳ TIME</div>
+                        <div class="time-value" id="timeValue">0.0s</div>
+                    </div>
+                    <div class="best-bar">
+                        <span>BEST</span>
+                        <span id="bestValue">0</span>
+                    </div>
+                </div>
+                <div class="screen-overlay start-screen active" id="startScreen">
+                    <div class="overlay-block">
+                        <div class="title">Arcade Glide</div>
+                        <div class="subtitle">Press Space, Click, or Tap to Start</div>
+                        <div class="meta-row">
+                            <div class="meta-card">
+                                <span>Best</span>
+                                <strong id="startBest">0</strong>
+                            </div>
+                            <div class="meta-card pulse-card">
+                                <span>Tap to launch</span>
+                                <strong>READY</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="screen-overlay gameover-screen" id="gameOverScreen">
+                    <div class="overlay-block">
+                        <div class="gameover-title">Game Over</div>
+                        <div class="gameover-score">Score <strong id="gameOverScore">0</strong></div>
+                        <div class="gameover-best">Best <strong id="gameOverBest">0</strong></div>
+                        <div class="gameover-time">Time <strong id="gameOverTime">0.0s</strong></div>
+                        <div class="gameover-rank" id="rankLabel">Beginner</div>
+                        <div class="restart-text">Press Space, Click, or Tap to Restart</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
