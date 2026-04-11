@@ -22,6 +22,7 @@ const config = {
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+const stage = document.querySelector('.canvas-wrapper');
 
 const ui = {
     scoreValue: document.getElementById('scoreValue'),
@@ -42,6 +43,7 @@ const state = {
     bestScore: 0,
     lastTime: 0,
     spawnTimer: 0,
+    spawnInterval: config.spawnInterval,
     obstacleSpeed: config.baseObstacleSpeed,
     obstacleGap: config.obstacleGapStart,
     gameTime: 0,
@@ -60,7 +62,8 @@ const input = {
 const particles = [];
 const obstacles = [];
 
-const audioContext = window.AudioContext ? new window.AudioContext() : null;
+const AudioCtor = window.AudioContext || window.webkitAudioContext;
+const audioContext = AudioCtor ? new AudioCtor() : null;
 let audioUnlocked = false;
 
 class Bird {
@@ -179,9 +182,9 @@ class Obstacle {
     }
 
     draw() {
-        const color = '#6ac7ff';
-        const shade = '#4c8ec1';
-        const highlight = 'rgba(255,255,255,0.24)';
+        const color = '#2fbf71';
+        const shade = '#238c56';
+        const highlight = 'rgba(255, 255, 255, 0.34)';
 
         ctx.fillStyle = color;
         ctx.fillRect(this.x, 0, this.width, this.topHeight);
@@ -194,6 +197,10 @@ class Obstacle {
         ctx.fillStyle = highlight;
         ctx.fillRect(this.x + 8, 12, this.width - 16, 6);
         ctx.fillRect(this.x + 8, this.bottomY + 12, this.width - 16, 6);
+
+        ctx.fillStyle = '#ff6b6b';
+        ctx.fillRect(this.x - 6, this.topHeight - 18, this.width + 12, 18);
+        ctx.fillRect(this.x - 6, this.bottomY, this.width + 12, 18);
     }
 
     isInsideView() {
@@ -318,6 +325,7 @@ function loadBestScore() {
 function resetGame() {
     state.score = 0;
     state.spawnTimer = 0;
+    state.spawnInterval = config.spawnInterval;
     state.obstacleSpeed = config.baseObstacleSpeed;
     state.obstacleGap = config.obstacleGapStart;
     state.gameTime = 0;
@@ -403,11 +411,10 @@ window.addEventListener('keydown', (event) => {
     }
 });
 
-canvas.addEventListener('mousedown', () => handleInput());
-canvas.addEventListener('touchstart', (event) => {
+stage.addEventListener('pointerdown', (event) => {
     event.preventDefault();
     handleInput();
-}, { passive: false });
+});
 
 function spawnObstacle() {
     const gap = Math.max(config.obstacleGapMin, state.obstacleGap);
@@ -442,7 +449,6 @@ function update(deltaTime) {
         bird.update(deltaTime);
 
         obstacles.forEach((obstacle) => obstacle.update(deltaTime));
-        obstacles.filter((pipe) => pipe.isInsideView());
 
         for (let i = obstacles.length - 1; i >= 0; i -= 1) {
             const obstacle = obstacles[i];
@@ -491,10 +497,21 @@ function update(deltaTime) {
 }
 
 function drawBackground() {
-    ctx.fillStyle = '#0b172e';
+    ctx.fillStyle = '#8ed9f2';
     ctx.fillRect(0, 0, config.width, config.height);
 
     const waveOffset = state.gameTime * 0.018;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.82)';
+    for (let i = 0; i < 4; i += 1) {
+        const x = ((i * 150) + (waveOffset * 6)) % (config.width + 180) - 120;
+        const y = 80 + i * 92;
+        ctx.beginPath();
+        ctx.ellipse(x, y, 34, 16, 0, 0, Math.PI * 2);
+        ctx.ellipse(x + 28, y + 4, 44, 18, 0, 0, Math.PI * 2);
+        ctx.ellipse(x + 62, y, 32, 14, 0, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
     for (let i = 0; i < 5; i += 1) {
         const y = 80 + i * 90;
         const amplitude = 10 + i * 3;
@@ -505,7 +522,7 @@ function drawBackground() {
             if (x === 0) ctx.moveTo(x, y + wave);
             else ctx.lineTo(x, y + wave);
         }
-        ctx.strokeStyle = `rgba(95, 170, 255, ${0.08 + i * 0.04})`;
+        ctx.strokeStyle = `rgba(255, 255, 255, ${0.18 + i * 0.04})`;
         ctx.lineWidth = 1.5;
         ctx.stroke();
     }
@@ -514,10 +531,10 @@ function drawBackground() {
 function drawGround() {
     const groundHeight = 66;
     const patternOffset = (state.gameTime * 0.08) % 40;
-    ctx.fillStyle = '#0f2348';
+    ctx.fillStyle = '#2fbf71';
     ctx.fillRect(0, config.height - groundHeight, config.width, groundHeight);
 
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.strokeStyle = 'rgba(17, 48, 71, 0.24)';
     ctx.lineWidth = 1;
     for (let x = -40 + patternOffset; x < config.width + 40; x += 40) {
         ctx.beginPath();

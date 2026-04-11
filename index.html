@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Arcade Glide</title>
+    <meta name="theme-color" content="#7dd3fc">
+    <meta name="description" content="Un mini jeu arcade jouable au clavier, a la souris et au tactile.">
+    <title>Arcade Glide - Jeu web</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -17,7 +19,7 @@
                         <div class="score-value" id="scoreValue">0</div>
                     </div>
                     <div class="time-board">
-                        <div class="time-label">⏳ TIME</div>
+                        <div class="time-label">TEMPS</div>
                         <div class="time-value" id="timeValue">0.0s</div>
                     </div>
                     <div class="best-bar">
@@ -28,15 +30,15 @@
                 <div class="screen-overlay start-screen active" id="startScreen">
                     <div class="overlay-block">
                         <div class="title">Arcade Glide</div>
-                        <div class="subtitle">Press Space, Click, or Tap to Start</div>
+                        <div class="subtitle">Espace, clic ou toucher pour jouer</div>
                         <div class="meta-row">
-                            <div class="meta-card">
+                            <div class="meta-item">
                                 <span>Best</span>
                                 <strong id="startBest">0</strong>
                             </div>
-                            <div class="meta-card pulse-card">
-                                <span>Tap to launch</span>
-                                <strong>READY</strong>
+                            <div class="meta-item pulse-card">
+                                <span>Depart</span>
+                                <strong>GO</strong>
                             </div>
                         </div>
                     </div>
@@ -46,9 +48,9 @@
                         <div class="gameover-title">Game Over</div>
                         <div class="gameover-score">Score <strong id="gameOverScore">0</strong></div>
                         <div class="gameover-best">Best <strong id="gameOverBest">0</strong></div>
-                        <div class="gameover-time">Time <strong id="gameOverTime">0.0s</strong></div>
+                        <div class="gameover-time">Temps <strong id="gameOverTime">0.0s</strong></div>
                         <div class="gameover-rank" id="rankLabel">Beginner</div>
-                        <div class="restart-text">Press Space, Click, or Tap to Restart</div>
+                        <div class="restart-text">Espace, clic ou toucher pour rejouer</div>
                     </div>
                 </div>
             </div>
