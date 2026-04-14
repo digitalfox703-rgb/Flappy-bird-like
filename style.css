@@ -452,7 +452,53 @@ canvas {
 
 @media (max-width: 420px) {
     .live-leaderboard {
+        left: 10px;
+        right: 10px;
+        bottom: 50px;
+        width: auto;
+        padding: 0;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+        opacity: 0.88;
+    }
+
+    .live-leaderboard-title {
         display: none;
+    }
+
+    .live-leaderboard-list {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 5px;
+        margin-top: 0;
+    }
+
+    .live-leaderboard-list li {
+        min-width: 0;
+        min-height: 20px;
+        align-items: center;
+        padding: 4px 6px;
+        overflow: hidden;
+        border: 1px solid rgba(17, 48, 71, 0.12);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.72);
+        font-size: 9px;
+        backdrop-filter: blur(6px);
+    }
+
+    .live-leaderboard-list li:first-child {
+        border-color: rgba(245, 158, 11, 0.32);
+        background: rgba(255, 255, 255, 0.82);
+    }
+
+    .live-leaderboard-list li span:first-child {
+        max-width: 54%;
+    }
+
+    .live-leaderboard-list strong {
+        font-size: 9px;
+        white-space: nowrap;
     }
 
     .score-board {
