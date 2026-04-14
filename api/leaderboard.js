@@ -44,7 +44,7 @@ function send(response, statusCode, body) {
 
 function sanitizeName(name) {
     const cleanName = String(name || '').trim().replace(/\s+/g, ' ').slice(0, 16);
-    return cleanName || 'Joueur';
+    return cleanName;
 }
 
 function sanitizeNumber(value, fallback = 0) {
@@ -88,9 +88,16 @@ async function addEntry(body) {
         throw error;
     }
 
+    const name = sanitizeName(body.name);
+    if (!name) {
+        const error = new Error('Name is required');
+        error.statusCode = 400;
+        throw error;
+    }
+
     const entry = {
         id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-        name: sanitizeName(body.name),
+        name,
         score: Math.max(0, Math.floor(sanitizeNumber(body.score))),
         level: Math.max(1, Math.floor(sanitizeNumber(body.level, 1))),
         createdAt: new Date().toISOString(),

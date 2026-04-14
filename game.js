@@ -19,10 +19,10 @@ const config = {
     soundEnabled: true,
     bestScoreKey: 'arcadeGlideBest',
     mobile: {
-        gravity: 0.28,
-        flapStrength: -9.4,
-        maxFallSpeed: 10.8,
-        maxRiseSpeed: -10.4,
+        gravity: 0.34,
+        flapStrength: -8.2,
+        maxFallSpeed: 12.5,
+        maxRiseSpeed: -9.2,
         baseObstacleSpeed: 2.22,
         obstacleGapStart: 236,
         obstacleGapMin: 158,
@@ -54,6 +54,7 @@ const ui = {
     leaderboardForm: document.getElementById('leaderboardForm'),
     playerName: document.getElementById('playerName'),
     leaderboardMessage: document.getElementById('leaderboardMessage'),
+    restartText: document.querySelector('.restart-text'),
 };
 
 const state = {
@@ -74,6 +75,10 @@ const state = {
     soundEnabled: config.soundEnabled,
     mobileTuning: false,
     leaderboardSubmitting: false,
+    leaderboardEntries: [],
+    leaderboardOnline: false,
+    pendingLeaderboardName: false,
+    leaderboardChecking: false,
 };
 
 const input = {
@@ -83,6 +88,7 @@ const input = {
 
 const particles = [];
 const obstacles = [];
+const frameStep = (deltaTime) => deltaTime * 0.06;
 
 const AudioCtor = window.AudioContext || window.webkitAudioContext;
 const audioContext = AudioCtor ? new AudioCtor() : null;
@@ -148,10 +154,11 @@ class Bird {
             this.rotation = Math.sin(this.bob * 0.9) * 0.2;
         } else {
             const tuning = getTuning();
-            this.velocity += tuning.gravity;
+            const step = frameStep(deltaTime);
+            this.velocity += tuning.gravity * step;
             this.velocity = clamp(this.velocity, tuning.maxRiseSpeed, tuning.maxFallSpeed);
-            this.y += this.velocity;
-            this.rotation = lerp(this.rotation, this.velocity / 18, 0.08);
+            this.y += this.velocity * step;
+            this.rotation = lerp(this.rotation, this.velocity / 18, 1 - (1 - 0.08) ** step);
         }
 
         if (this.wing > 0) {
@@ -382,6 +389,9 @@ function resetGame() {
     state.elapsedTime = 0;
     state.gameStartTime = 0;
     state.shakeTime = 0;
+    state.leaderboardSubmitting = false;
+    state.pendingLeaderboardName = false;
+    state.leaderboardChecking = false;
     obstacles.length = 0;
     particles.length = 0;
     bird.reset();
@@ -421,9 +431,19 @@ function showGameOver() {
     ui.gameOverTime.textContent = `${state.elapsedTime.toFixed(1)}s`;
     ui.gameOverLevel.textContent = state.level;
     ui.rankLabel.textContent = getRankLabel(state.score);
-    prepareLeaderboardForm();
+    ui.playerName.value = '';
+    ui.playerName.classList.remove('input-error');
+    state.pendingLeaderboardName = false;
+    state.leaderboardChecking = true;
+    setLeaderboardFormActive(false);
+    setLeaderboardMessage('Verification du top 3...');
+    ui.restartText.textContent = 'Espace, clic ou toucher pour rejouer';
     showOverlay(ui.gameOverScreen);
-    loadLeaderboard();
+    loadLeaderboard().then(() => {
+        if (state.current !== 'gameover') return;
+        state.leaderboardChecking = false;
+        prepareLeaderboardForm();
+    });
 }
 
 function hideGameOver() {
@@ -435,10 +455,9 @@ function formatChrono(seconds) {
 }
 
 function renderLeaderboard(entries) {
-    const lists = [ui.startLeaderboard, ui.gameOverLeaderboard, ui.liveLeaderboard];
     const rows = Array.isArray(entries) ? entries.slice(0, 3) : [];
 
-    lists.forEach((list) => {
+    [ui.startLeaderboard, ui.gameOverLeaderboard].forEach((list) => {
         if (!list) return;
         if (!rows.length) {
             list.innerHTML = '<li>Aucun chrono en ligne</li>';
@@ -449,24 +468,57 @@ function renderLeaderboard(entries) {
             `<li><span><strong>${escapeHtml(entry.name)}</strong> niv. ${entry.level}</span><span>${formatChrono(entry.time)}</span></li>`
         )).join('');
     });
+
+    if (!ui.liveLeaderboard) return;
+    if (!rows.length) {
+        ui.liveLeaderboard.innerHTML = '<li>Aucun chrono</li>';
+        return;
+    }
+
+    ui.liveLeaderboard.innerHTML = rows.map((entry, index) => (
+        `<li><span>${index + 1}. ${escapeHtml(entry.name)}</span><strong>${formatChrono(entry.time)}</strong></li>`
+    )).join('');
 }
 
 function setLeaderboardMessage(message) {
     ui.leaderboardMessage.textContent = message;
 }
 
+function isTopThreeTime(entries, time) {
+    if (time <= 10 || !Array.isArray(entries)) return false;
+    if (entries.length < 3) return true;
+    const slowestTopTime = Number(entries[entries.length - 1].time);
+    return Number.isFinite(slowestTopTime) && time > slowestTopTime;
+}
+
+function setLeaderboardFormActive(isActive) {
+    ui.leaderboardForm.classList.toggle('active', isActive);
+    ui.playerName.required = isActive;
+    ui.playerName.disabled = !isActive;
+    ui.leaderboardForm.querySelector('button').disabled = !isActive;
+}
+
 function prepareLeaderboardForm() {
-    const qualifies = state.elapsedTime > 10;
-    ui.leaderboardForm.classList.toggle('active', qualifies);
-    ui.playerName.disabled = !qualifies;
-    ui.leaderboardForm.querySelector('button').disabled = !qualifies;
+    const qualifies = state.leaderboardOnline && isTopThreeTime(state.leaderboardEntries, state.elapsedTime);
+    state.pendingLeaderboardName = qualifies;
+    setLeaderboardFormActive(qualifies);
 
     if (qualifies) {
-        setLeaderboardMessage('Ton chrono peut entrer dans le top 3.');
+        ui.restartText.textContent = 'Entre ton prenom pour valider ton top 3';
+        setLeaderboardMessage('Top 3 ! Entre ton prenom pour valider.');
+        ui.playerName.focus();
         return;
     }
 
-    setLeaderboardMessage('Il faut faire plus de 10.0s pour le classement.');
+    ui.restartText.textContent = 'Espace, clic ou toucher pour rejouer';
+
+    if (!state.leaderboardOnline) {
+        setLeaderboardMessage('Classement en ligne indisponible pour le moment.');
+    } else if (state.elapsedTime <= 10) {
+        setLeaderboardMessage('Il faut faire plus de 10.0s pour le classement.');
+    } else {
+        setLeaderboardMessage('Chrono hors top 3. Tu peux rejouer.');
+    }
 }
 
 async function loadLeaderboard() {
@@ -474,16 +526,30 @@ async function loadLeaderboard() {
         const response = await fetch('/api/leaderboard', { cache: 'no-store' });
         if (!response.ok) throw new Error('leaderboard unavailable');
         const data = await response.json();
-        renderLeaderboard(data.entries);
+        state.leaderboardEntries = Array.isArray(data.entries) ? data.entries : [];
+        state.leaderboardOnline = true;
+        renderLeaderboard(state.leaderboardEntries);
+        return state.leaderboardEntries;
     } catch (error) {
-        renderLeaderboard([]);
+        state.leaderboardEntries = [];
+        state.leaderboardOnline = false;
+        renderLeaderboard(state.leaderboardEntries);
         setLeaderboardMessage('Classement en ligne a connecter sur Vercel.');
+        return state.leaderboardEntries;
     }
 }
 
 async function submitLeaderboard(event) {
     event.preventDefault();
-    if (state.leaderboardSubmitting || state.elapsedTime <= 10) return;
+    if (state.leaderboardSubmitting || state.leaderboardChecking || !state.pendingLeaderboardName) return;
+
+    const playerName = ui.playerName.value.trim();
+    if (!playerName) {
+        ui.playerName.classList.add('input-error');
+        setLeaderboardMessage('Ton prenom est obligatoire pour garder ta place.');
+        ui.playerName.focus();
+        return;
+    }
 
     state.leaderboardSubmitting = true;
     const button = ui.leaderboardForm.querySelector('button');
@@ -495,7 +561,7 @@ async function submitLeaderboard(event) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                name: ui.playerName.value,
+                name: playerName,
                 time: state.elapsedTime,
                 score: state.score,
                 level: state.level,
@@ -505,13 +571,18 @@ async function submitLeaderboard(event) {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'submission failed');
 
-        renderLeaderboard(data.entries);
+        state.leaderboardEntries = Array.isArray(data.entries) ? data.entries : [];
+        state.leaderboardOnline = true;
+        state.pendingLeaderboardName = false;
+        renderLeaderboard(state.leaderboardEntries);
+        setLeaderboardFormActive(false);
+        ui.restartText.textContent = 'Espace, clic ou toucher pour rejouer';
         setLeaderboardMessage(data.accepted ? 'Chrono envoye.' : 'Chrono hors top 3.');
     } catch (error) {
         setLeaderboardMessage('Classement en ligne indisponible pour le moment.');
     } finally {
         state.leaderboardSubmitting = false;
-        button.disabled = false;
+        button.disabled = !state.pendingLeaderboardName;
     }
 }
 
@@ -546,6 +617,16 @@ function handleInput() {
     } else if (state.current === 'playing') {
         bird.flap();
     } else if (state.current === 'gameover') {
+        if (state.leaderboardChecking) {
+            setLeaderboardMessage('Verification du top 3...');
+            return;
+        }
+        if (state.leaderboardSubmitting) return;
+        if (state.pendingLeaderboardName) {
+            setLeaderboardMessage('Entre ton prenom pour valider ton top 3.');
+            ui.playerName.focus();
+            return;
+        }
         state.current = 'start';
         resetGame();
         hideGameOver();
@@ -567,6 +648,9 @@ stage.addEventListener('pointerdown', (event) => {
 });
 
 ui.leaderboardForm.addEventListener('submit', submitLeaderboard);
+ui.playerName.addEventListener('input', () => {
+    ui.playerName.classList.remove('input-error');
+});
 window.addEventListener('resize', syncResponsiveTuning);
 
 function spawnObstacle() {

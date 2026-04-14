@@ -175,27 +175,29 @@ canvas {
 }
 
 .live-leaderboard {
-    left: 16px;
-    bottom: 60px;
-    width: 178px;
-    padding: 10px 12px;
+    right: 12px;
+    bottom: 54px;
+    width: 132px;
+    padding: 7px 8px;
+    opacity: 0.84;
 }
 
 .live-leaderboard-title {
-    font-size: 11px;
+    font-size: 9px;
     font-weight: 800;
     color: #0f2f44;
     text-transform: uppercase;
 }
 
 .live-leaderboard-list {
-    gap: 6px;
-    margin-top: 8px;
+    gap: 3px;
+    margin-top: 5px;
 }
 
 .live-leaderboard-list li {
-    min-height: 18px;
-    font-size: 11px;
+    min-height: 14px;
+    font-size: 10px;
+    line-height: 1.1;
 }
 
 .live-leaderboard-list li span:first-child {
@@ -203,6 +205,10 @@ canvas {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.live-leaderboard-list strong {
+    font-size: 10px;
 }
 
 .screen-overlay {
@@ -319,21 +325,21 @@ canvas {
 }
 
 .leaderboard-panel {
-    margin-top: 18px;
-    padding-top: 14px;
+    margin-top: 14px;
+    padding-top: 12px;
     border-top: 2px solid rgba(47, 191, 113, 0.22);
 }
 
 .leaderboard-title {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
     color: #0f2f44;
 }
 
 .leaderboard-list {
     display: grid;
-    gap: 8px;
-    margin-top: 10px;
+    gap: 6px;
+    margin-top: 8px;
     list-style-position: inside;
 }
 
@@ -341,8 +347,8 @@ canvas {
     display: flex;
     justify-content: space-between;
     gap: 10px;
-    min-height: 22px;
-    font-size: 13px;
+    min-height: 20px;
+    font-size: 12px;
     color: #386071;
 }
 
@@ -387,6 +393,11 @@ canvas {
     padding: 0 10px;
     color: #0f2f44;
     background: #ffffff;
+}
+
+.leaderboard-controls input.input-error {
+    border-color: #f05f5f;
+    box-shadow: 0 0 0 3px rgba(240, 95, 95, 0.16);
 }
 
 .leaderboard-controls button {
@@ -440,6 +451,10 @@ canvas {
 }
 
 @media (max-width: 420px) {
+    .live-leaderboard {
+        display: none;
+    }
+
     .score-board {
         top: 12px;
         min-width: 88px;
